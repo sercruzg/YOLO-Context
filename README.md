@@ -1,4 +1,4 @@
-### YOLO-Context
+# YOLO-Context
 This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset
 
 ### Citing EgoDaily
