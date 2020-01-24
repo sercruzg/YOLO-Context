@@ -1,5 +1,11 @@
 # YOLO-Context
-This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset
+This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset. This code is a fork from YOLO.
+
+To start training you can use the following command
+
+```
+./darknet detector train egoDailyDisamObj.data yoloContext-obj.cfg darknet19_448.conv.23 -gpus 0 -clear -dont_show
+```
 
 ### Citing EgoDaily
 If you find the EgoDaily dataset useful in your research, please consider citing:
