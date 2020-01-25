@@ -95,19 +95,6 @@ float *get_network_output_gpu(network net);
 void forward_network_gpu(network net, network_state state);
 void backward_network_gpu(network net, network_state state);
 void update_network_gpu(network net);
-float train_network_context_part_datum_gpu(network net, network joinNet, float *x, float *y);
-float train_network_context_datum_gpu(network net, network contNet, network joinNet, float *x, float *y);
-float train_network_region_class_datum_gpu(network net, network contNet, float *x, float *y, float *X_f);
-float train_network_context_datum_gpu_flip(network net, network contNet, network joinNet, float *x, float *y, float *x_f, float *y_f);
-float train_network_deform_datum_gpu(network net, network anchorNet, float *x, float *y);
-float *network_predict_context_gpu(network net, network contNet, network joinNet, float *input);
-float *network_predict_flip_gpu(network net, network contNet, network joinNet, float *input, float *input_f);
-float *network_predict_concat_gpu(network net, network contNet, float *input);
-float train_network_select_datum_gpu(network net, network contNet, network joinNet, float *x, float *y, network selectNet);
-float train_network_attention_datum_gpu(network net, network contNet, float *x, float *y);
-float *network_predict_att_gpu(network net, network joinNet, float *input);
-void forward_backward_grad_network_gpu(network net, float *x);
-float *network_predict_bot_gpu(network net, network contextNet, network joinNet, float *input, float *input_bot);
 #endif
 
 float get_current_rate(network net);
@@ -125,11 +112,6 @@ float train_network(network net, data d);
 float train_network_batch(network net, data d, int n);
 float train_network_sgd(network net, data d, int n);
 float train_network_datum(network net, float *x, float *y);
-float train_context_network(network net, network contNet, network join, data d);
-float train_context_network_flip(network net, network contNet, network join, data d, data d_f);
-float train_deform_network(network net, network anchorNet, data d);
-float train_select_network(network net, network contNet, network join, data d, network selectNet);
-float train_attention_network_datum(network net, network contNet, float *x, float *y);
 
 matrix network_predict_data(network net, data test);
 float *network_predict(network net, float *input);
