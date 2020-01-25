@@ -10,7 +10,7 @@ To start training you can use the following command
 ```
 
 ### Citing EgoDaily
-If you find the EgoDaily dataset useful in your research, please consider citing:
+If you find this code useful in your research, please consider citing:
 ```
 @article{CRUZ2019131,
 title = "Is that my hand? An egocentric dataset for hand disambiguation",
