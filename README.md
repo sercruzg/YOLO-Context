@@ -1,5 +1,7 @@
 # YOLO-Context
-This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset. This code is a fork from YOLO.
+This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset. This code is a fork from YOLO. 
+
+This code masks the ground truth out after the convolutions, leaving no information left. This forces the Neural Network to use the surrounding objects to learn.
 
 To start training you can use the following command
 
