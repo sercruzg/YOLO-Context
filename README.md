@@ -15,6 +15,14 @@ pad=1
 activation=leaky
 mask=1
 ```
+The annotations are the same as YOLO, to train you need a file "egoDailyDisamTrain.txt" with each line pointing to the images 
+
+```
+<Path-to-images>/frame-0001.jpg
+<Path-to-images>/frame-0002.jpg
+<Path-to-images>/frame-0003.jpg
+...
+```
 
 To start training you can use the following command
 
