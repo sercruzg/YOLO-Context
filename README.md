@@ -24,6 +24,16 @@ The annotations are the same as YOLO, to train you need a file "egoDailyDisamTra
 ...
 ```
 
+And you need the annotations to be in the same path, however, if the path has the word "images" in any portion of it, it will be replaced to "labels", so the program will look for the annotations like 
+
+```
+<Path-to-labels>/frame-0001.txt
+<Path-to-labels>/frame-0002.txt
+<Path-to-labels>/frame-0003.txt
+...
+```
+
+
 To start training you can use the following command
 
 ```
