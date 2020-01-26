@@ -1,4 +1,4 @@
-function createYoloDailyDatabaseDisam()
+function createYoloAnnotations()
 
 path = '<path-to-images>';
 impos = [];
