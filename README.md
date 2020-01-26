@@ -1,7 +1,20 @@
 # YOLO-Context
 This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset. This code is based on the [YOLO](https://github.com/pjreddie/darknet) code.
 
-This code masks the ground truth out after the convolutions, leaving no information left. This forces the Neural Network to use the surrounding objects to learn.
+This code masks the ground truth out after the convolutions on what we call the "Feature extraction" section, putting all the information inside the bounding box to 0. This forces the Neural Network to use the surrounding objects to learn.
+
+To use the masking in a layer you can set Mask=0 like this:
+
+```
+[convolutional]
+batch_normalize=1
+filters=512
+size=1
+stride=1
+pad=1
+activation=leaky
+mask=1
+```
 
 To start training you can use the following command
 
