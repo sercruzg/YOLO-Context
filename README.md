@@ -33,7 +33,7 @@ And you need the annotations to be in the same path, however, if the path has th
 ...
 ```
 
-
+We include a simple matlab program to annotate the images based on the EgoDaily dataset.
 To start training you can use the following command
 
 ```
