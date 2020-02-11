@@ -1,7 +1,7 @@
 # YOLO-Context
 This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoDaily) dataset and was used for our [paper](https://doi.org/10.1016/j.imavis.2019.06.002). This code is based on the [YOLOv2](https://github.com/pjreddie/darknet) code.
 
-This code masks the ground truth out after the convolutions on what we call the "Feature extraction" section, putting all the information inside the bounding box to 0. This forces the Neural Network to use the surrounding objects for detection.
+This code masks the ground truth out after the convolutions on what we call the "Feature extraction" section, putting all the information inside the bounding box to 0. This forces the Neural Network to use the surrounding objects for detection. This code so far only trains the context, we will add the stream combination and testing code as soon as possible.
 
 ![GitHub Logo](masking.png)
 
