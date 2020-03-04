@@ -942,6 +942,13 @@ void *load_thread(void *ptr)
         *a.d = load_data_region(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure);
     } else if (a.type == DETECTION_DATA){
         *a.d = load_data_detection(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.small_object);
+    } else if (a.type == DETECTION_DATA_FLIP_PATH){
+        char **random_paths = get_random_paths(a.paths, a.n, a.m);
+        *a.d = load_data_detection_flip_paths(a.n, random_paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.small_object, 0);
+        *a.d_f = load_data_detection_flip_paths(a.n, random_paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.small_object, 1);
+        free(random_paths);
+    } else if (a.type == DETECTION_DATA_FLIP){
+        *a.d = load_data_detection_flip(a.n, a.paths, a.m, a.w, a.h, a.num_boxes, a.classes, a.jitter, a.hue, a.saturation, a.exposure, a.small_object, 0);
     } else if (a.type == SWAG_DATA){
         *a.d = load_data_swag(a.paths, a.n, a.classes, a.jitter);
     } else if (a.type == COMPARE_DATA){

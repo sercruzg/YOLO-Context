@@ -1,5 +1,5 @@
 classes= 2
-train  = egoDailyDisamTrain.txt
-valid  = 2012_val.txt
-names = egoDailyDisam.names
+train  = /public/scruzgome2/yolo/yolov2/darknet/egoDailyDisamTrain.txt
+valid  = /public/scruzgome2/yolo/VOCdevkit/2012_val.txt
+names = /public/scruzgome2/yolo/yolov2/darknet/egoDailyDisam.names
 backup = backup/

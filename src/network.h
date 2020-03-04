@@ -88,6 +88,7 @@ typedef struct network_state {
 float train_networks(network *nets, int n, data d, int interval);
 void sync_nets(network *nets, int n, int interval);
 float train_network_datum_gpu(network net, float *x, float *y);
+float train_network_joint_datum_gpu(network net, network contNet, network joinNet, float *x, float *y);
 float *network_predict_gpu(network net, float *input);
 float * get_network_output_gpu_layer(network net, int i);
 float * get_network_delta_gpu_layer(network net, int i);
@@ -95,6 +96,7 @@ float *get_network_output_gpu(network net);
 void forward_network_gpu(network net, network_state state);
 void backward_network_gpu(network net, network_state state);
 void update_network_gpu(network net);
+float *network_predict_joint_gpu(network net, network contNet, network joinNet, float *input);
 #endif
 
 float get_current_rate(network net);
@@ -112,6 +114,7 @@ float train_network(network net, data d);
 float train_network_batch(network net, data d, int n);
 float train_network_sgd(network net, data d, int n);
 float train_network_datum(network net, float *x, float *y);
+float train_joint_network(network net, network contNet, network join, data d);
 
 matrix network_predict_data(network net, data test);
 float *network_predict(network net, float *input);

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "concat_layer.h"
 #include "activation_layer.h"
 #include "activations.h"
 #include "assert.h"
@@ -46,6 +47,7 @@ LAYER_TYPE string_to_layer_type(char * type)
     if (strcmp(type, "[crop]")==0) return CROP;
     if (strcmp(type, "[cost]")==0) return COST;
     if (strcmp(type, "[detection]")==0) return DETECTION;
+    if (strcmp(type, "[concat]")==0) return CONCAT;
     if (strcmp(type, "[region]")==0) return REGION;
     if (strcmp(type, "[local]")==0) return LOCAL;
     if (strcmp(type, "[conv]")==0
@@ -135,6 +137,22 @@ local_layer parse_local(list *options, size_params params)
     if(!(h && w && c)) error("Layer before local layer must output image.");
 
     local_layer layer = make_local_layer(batch,h,w,c,n,size,stride,pad,activation);
+
+    return layer;
+}
+
+concat_layer parse_concat(list *options, size_params params)
+{
+    int batch,h,w,c,l, flip, c_sec;
+    h = option_find_int(options, "height",1);
+    w = option_find_int(options, "width",1);
+    c = option_find_int(options, "channels",1);
+    c_sec = option_find_int(options, "channels_sec",c);
+    l = option_find_int(options, "layer",0);
+    flip = option_find_int(options, "flip",0);
+    batch=params.batch;
+
+    concat_layer layer = make_concat_layer(batch, h ,w, c, l, flip, c_sec);
 
     return layer;
 }
@@ -664,6 +682,8 @@ network parse_network_cfg_custom(char *filename, int batch)
         LAYER_TYPE lt = string_to_layer_type(s->type);
         if(lt == CONVOLUTIONAL){
             l = parse_convolutional(options, params);
+        }else if(lt == CONCAT){
+            l = parse_concat(options, params);
         }else if(lt == LOCAL){
             l = parse_local(options, params);
         }else if(lt == ACTIVE){

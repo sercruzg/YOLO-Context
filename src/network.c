@@ -626,3 +626,73 @@ void free_network(network net)
 	free(net.workspace);
 #endif
 }
+
+float train_joint_network_datum(network net, network contNet, network joinNet, float *x, float *y)
+{
+#ifdef GPU
+    if(gpu_index >= 0) return train_network_joint_datum_gpu(net, contNet, joinNet, x, y);
+#endif
+    network_state state;
+    *net.seen += net.batch;
+    state.index = 0;
+    state.net = net;
+    state.input = x;
+    state.train = 1;
+    forward_network(net, state);
+    state.index = 0;
+    state.net = contNet;
+    state.input = x;
+    state.train = 1;
+    forward_network(contNet, state);
+    state.index = 0;
+    state.net = joinNet;
+    state.input = net.layers[net.n - 1].output;
+    //state.contInput = contNet.layers[net.n - 1].output;
+    state.delta = 0;
+    state.truth = y;
+    state.train = 1;
+    forward_network(joinNet, state);
+    backward_network(joinNet, state);
+    float error = get_network_cost(joinNet);
+    if(((*net.seen)/net.batch)%net.subdivisions == 0) update_network(net);
+    return error;
+}
+
+float train_joint_network(network net, network contNet, network join, data d)
+{
+    assert(d.X.rows % join.batch == 0);
+    int batch = join.batch;
+    int n = d.X.rows / batch;
+    float *X = calloc(batch*d.X.cols, sizeof(float));
+    float *y = calloc(batch*d.y.cols, sizeof(float));
+    //printf("Y cols %d X cols %d  Join Batch %d\n",d.y.cols, d.X.cols, join.batch);
+    int i;
+    float sum = 0;
+    for(i = 0; i < n; ++i){
+        get_next_batch(d, batch, i*batch, X, y);
+        float err = train_joint_network_datum(net, contNet, join, X, y);
+        sum += err;
+    }
+    free(X);
+    free(y);
+    return (float)sum/(n*batch);
+}
+
+float *network_predict_joint(network net, network contNet, network joinNet, float *input)
+{
+#ifdef GPU
+    if(gpu_index >= 0)  return network_predict_joint_gpu(net, contNet, joinNet, input);
+#endif
+
+    network_state state;
+    state.net = net;
+    state.index = 0;
+    state.input = input;
+    state.truth = 0;
+    state.train = 0;
+    state.delta = 0;
+    forward_network(net, state);
+    float *out = get_network_output(net);
+    return out;
+}
+

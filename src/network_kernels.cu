@@ -63,19 +63,16 @@ void backward_only_network_gpu(network net)
 
 void forward_only_network_gpu(network net, float *x)
 {
-    //fprintf(stderr, "Forward only\n");
     network_state state;
     state.index = 0;
     state.net = net;
     state.truth = 0;
     int x_size = get_network_input_size(net)*net.batch;
-    //fprintf(stderr, "Net Size: %d\n",get_network_input_size(net));
     if(!*net.input_gpu){
         *net.input_gpu = cuda_make_array(x, x_size);
     }else{
         cuda_push_array(*net.input_gpu, x, x_size);
     }
-    //fprintf(stderr, "Data load\n");
     state.input = *net.input_gpu;
     state.delta = 0;
     state.train = 0;
@@ -781,3 +778,82 @@ float *network_predict_gpu(network net, float *input)
     cuda_free(state.input);
     return out;
 }
+
+void forward_backward_joint_network_gpu(network net, network contNet, network joinNet, float *x, float *y)
+{
+    network_state state;
+    state.index = 0;
+    state.net = joinNet;
+    state.objNet = net;
+    state.contNet = contNet;
+    int y_size = get_network_output_size(joinNet)*joinNet.batch;
+    if(joinNet.layers[joinNet.n-1].truths) y_size = joinNet.layers[joinNet.n-1].truths*joinNet.batch;
+    if(!*joinNet.truth_gpu){
+        *joinNet.truth_gpu = cuda_make_array(y, y_size);
+    }else{
+        cuda_push_array(*joinNet.truth_gpu, y, y_size);
+    }
+    state.delta = 0;
+    state.truth = *joinNet.truth_gpu;
+    state.train = 1;
+#ifdef CUDNN_HALF
+	int i;
+	for (i = 0; i < net.n; ++i) {
+		layer l = net.layers[i];
+		cuda_convert_f32_to_f16(l.weights_gpu, l.c*l.n*l.size*l.size, l.weights_gpu16);
+	}
+#endif
+    forward_network_gpu(joinNet, state);
+	cudaStreamSynchronize(get_cuda_stream());
+    backward_network_gpu(joinNet, state);
+}
+
+float train_network_joint_datum_gpu(network net, network contNet, network joinNet, float *x, float *y)
+{
+    forward_only_network_gpu(net, x);
+    forward_only_network_gpu(contNet, x);
+    *joinNet.seen += joinNet.batch;
+    forward_backward_joint_network_gpu(net, contNet, joinNet, x, y);
+    float error = get_network_cost(joinNet);
+    if (((*joinNet.seen) / joinNet.batch) % joinNet.subdivisions == 0) {
+        update_network_gpu(joinNet);
+    }
+    return error;
+}
+
+float *network_predict_joint_gpu(network net, network contextNet, network joinNet, float *input)
+{
+    if (net.gpu_index != cuda_get_device())
+                cuda_set_device(net.gpu_index);
+    int size = get_network_input_size(net) * net.batch;
+    float *oriData = cuda_make_array(input, size);
+    network_state state;
+    state.index = 0;
+    state.net = net;
+    state.input = oriData;
+    state.truth = 0;
+    state.train = 0;
+    state.delta = 0;
+    forward_network_gpu(net, state);
+
+    state.index = 0;
+    state.net = contextNet;
+    state.input = oriData;
+    state.truth = 0;
+    state.train = 0;
+    state.delta = 0;
+    forward_network_gpu(contextNet, state);
+
+    state.index = 0;
+    state.net = joinNet;
+    state.objNet = net;
+    state.contNet = contextNet;
+    state.truth = 0;
+    state.train = 0;
+    state.delta = 0;
+    forward_network_gpu(joinNet, state);
+    float *out = get_network_output_gpu(joinNet);
+    cuda_free(oriData);
+    return out;
+}
+

@@ -1131,6 +1131,256 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     }
 }
 
+void train_joint(char *datacfg, char *cfgfile, char *weightfile,  char *weightSecondfile, char *contextArchNet, int *gpus, int ngpus, int clear, int dont_show)
+{
+    list *options = read_data_cfg(datacfg);
+    char *train_images = option_find_str(options, "train", "data/train.list");
+    char *backup_directory = option_find_str(options, "backup", "/backup/");
+
+    srand(time(0));
+    char *base = basecfg(contextArchNet);
+    printf("%s\n", base);
+    float avg_loss = -1;
+    network *nets = calloc(ngpus, sizeof(network));
+    network *ContextNets = calloc(ngpus, sizeof(network));
+    network *joinNets = calloc(ngpus, sizeof(network));
+
+    srand(time(0));
+    int seed = rand();
+    int i;
+    for(i = 0; i < ngpus; ++i){
+        srand(seed);
+#ifdef GPU
+        cuda_set_device(gpus[i]);
+#endif
+        nets[i] = parse_network_cfg(cfgfile);
+        ContextNets[i] = parse_network_cfg(cfgfile);
+        joinNets[i] = parse_network_cfg(contextArchNet);
+        if(weightfile){
+            load_weights(&nets[i], weightfile);
+            load_weights(&ContextNets[i], weightSecondfile);
+        }
+        if(clear){ 
+            *nets[i].seen = 0;
+            *ContextNets[i].seen = 0;
+            *joinNets[i].seen = 0;
+        }
+        nets[i].learning_rate *= ngpus;
+        ContextNets[i].learning_rate *= ngpus;
+        joinNets[i].learning_rate *= ngpus;
+    }
+    srand(time(0));
+    network net = nets[0];
+    network contextNet = ContextNets[0];
+    network joinNet = joinNets[0];
+    
+    int imgs = joinNet.batch * joinNet.subdivisions * ngpus;
+    printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", joinNet.learning_rate, joinNet.momentum, joinNet.decay);
+    data train, buffer;
+
+    layer l = joinNet.layers[joinNet.n - 1];
+
+    int classes = l.classes;
+    float jitter = l.jitter;
+
+    list *plist = get_paths(train_images);
+    //int N = plist->size;
+    char **paths = (char **)list_to_array(plist);
+
+	int init_w = joinNet.w;
+	int init_h = joinNet.h;
+
+    load_args args = {0};
+    args.w = joinNet.w;
+    args.h = joinNet.h;
+    args.paths = paths;
+    args.n = imgs;
+    args.m = plist->size;
+    args.classes = classes;
+    args.jitter = jitter;
+    args.num_boxes = l.max_boxes;
+	args.small_object = l.small_object;
+    args.d = &buffer;
+    args.type = DETECTION_DATA_FLIP;
+	args.threads = 4;// 8;
+    args.flip = net.flip;
+
+    args.angle = joinNet.angle;
+    args.exposure = joinNet.exposure;
+    args.saturation = joinNet.saturation;
+    args.hue = joinNet.hue;
+
+#ifdef OPENCV
+	IplImage* img = NULL;
+	float max_img_loss = 5;
+	int number_of_lines = 100;
+	int img_size = 1000;
+	if (!dont_show)
+		img = draw_train_chart(max_img_loss, joinNet.max_batches, number_of_lines, img_size);
+#endif	//OPENCV
+
+    pthread_t load_thread = load_data(args);
+    clock_t time;
+    int count = 0;
+    //while(i*imgs < N*120){
+    while(get_current_batch(joinNet) < joinNet.max_batches){
+		if(l.random && count++%10 == 0){
+            printf("Resizing\n");
+			int dim = (rand() % 12 + (init_w/32 - 5)) * 32;	// +-160
+            //int dim = (rand() % 10 + 10) * 32;
+            //if (get_current_batch(net)+100 > net.max_batches) dim = 544;
+            //int dim = (rand() % 4 + 16) * 32;
+            printf("%d\n", dim);
+            args.w = dim;
+            args.h = dim;
+
+            pthread_join(load_thread, 0);
+            train = buffer;
+            free_data(train);
+            load_thread = load_data(args);
+
+            for(i = 0; i < ngpus; ++i){
+                resize_network(nets + i, dim, dim);
+            }
+            net = nets[0];
+        }
+        time=clock();
+        pthread_join(load_thread, 0);
+        train = buffer;
+        load_thread = load_data(args);
+        
+        printf("Loaded: %lf seconds\n", sec(clock()-time));
+
+        time=clock();
+        float loss = 0;
+#ifdef GPU
+        if(ngpus == 1){
+            loss = train_joint_network(net, contextNet, joinNet, train);
+        } else {
+            loss = train_networks(nets, ngpus, train, 4);
+        }
+#else
+        loss = train_network(net, train);
+#endif
+        if (avg_loss < 0) avg_loss = loss;
+        avg_loss = avg_loss*.9 + loss*.1;
+
+        i = get_current_batch(joinNet);
+        printf("%d: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(joinNet), loss, avg_loss, get_current_rate(joinNet), sec(clock()-time), i*imgs);
+
+#ifdef OPENCV
+		if(!dont_show)
+			draw_train_loss(img, img_size, avg_loss, max_img_loss, i, joinNet.max_batches);
+#endif	// OPENCV
+
+		//if (i % 1000 == 0 || (i < 1000 && i % 100 == 0)) {
+		if (i % 5000 == 0) {
+#ifdef GPU
+			if (ngpus != 1) sync_nets(joinNets, ngpus, 0);
+#endif
+			char buff[256];
+			sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
+			save_weights(joinNet, buff);
+		}
+        free_data(train);
+    }
+#ifdef GPU
+    if(ngpus != 1) sync_nets(nets, ngpus, 0);
+#endif
+    char buff[256];
+    sprintf(buff, "%s/%s_final.weights", backup_directory, base);
+    save_weights(joinNet, buff);
+
+	//cvReleaseImage(&img);
+	//cvDestroyAllWindows();*/
+    
+}
+
+void test_joint(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, int dont_show, char *weightContext, char *jointNet, char *joinWeights, char *outFile, int imWidth, int imHeight)
+{
+    list *options = read_data_cfg(datacfg);
+    char *name_list = option_find_str(options, "names", "data/names.list");
+    char **names = get_labels(name_list);
+
+    list *plist = get_paths(filename);
+    int N = plist->size;
+    char **testPaths = (char **)list_to_array(plist);
+
+    image **alphabet = load_alphabet();
+    network net = parse_network_cfg_custom(cfgfile, 1);
+    network contextNet = parse_network_cfg_custom(cfgfile, 1);
+    network joinNet = parse_network_cfg_custom(jointNet, 1);
+    if(weightfile){
+        load_weights(&net, weightfile);
+        load_weights(&contextNet, weightContext);
+        load_weights(&joinNet, joinWeights);
+    }
+    set_batch_network(&net, 1);
+    set_batch_network(&contextNet, 1);
+    set_batch_network(&joinNet, 1);
+    srand(2222222);
+
+    clock_t time;
+    char buff[256];
+    char *input = buff;
+    int j,k;
+    float nms=.4;
+    int counter = 1;
+    for(int i = 0; i < N; i++){/*
+        if(filename){
+            strncpy(input, filename, 256);
+                        if (input[strlen(input) - 1] == 0x0d) input[strlen(input) - 1] = 0;
+        } else {
+            printf("Enter Image Path: %d", counter++);
+            fflush(stdout);
+            input = fgets(input, 256, stdin);
+            if(!input) return;
+            strtok(input, "\n");
+        }*/
+        char *input = testPaths[i];
+        image im = load_image_color(input,0,0);
+        image sized = resize_image(im, joinNet.w, joinNet.h);
+        layer l = joinNet.layers[joinNet.n-1];
+
+        box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+        float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+        for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes, sizeof(float *));
+
+        float *X = sized.data;
+        time=clock();
+        network_predict_joint(net, contextNet, joinNet, X);
+        printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
+        get_region_boxes(l, 1, 1, -1, probs, boxes, 0, 0);
+        //if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+        draw_detections_imSize(im, l.w*l.h*l.n, -1, boxes, probs, names, alphabet, l.classes, imWidth, imHeight);
+        //save_image(im, "predictions");
+
+        /*fprintf(f, "%d\n", l.w*l.h*l.n);
+        for(k = 0; k < l.w*l.h*l.n; ++k){
+            int class_id = max_index(probs[k], l.classes);
+            float prob = probs[k][class_id];
+            if(prob > thresh){
+                fprintf(f, "%f %f %f %f %f %f\n", boxes[k].x, boxes[k].y, boxes[k].w, boxes[k].h, prob);
+            }
+        }*/
+                if (!dont_show) {
+                        //show_image(im, "predictions");
+                }
+        free_image(im);
+        free_image(sized);
+        free(boxes);
+        free_ptrs((void **)probs, l.w*l.h*l.n);
+#ifdef OPENCV
+                if (!dont_show) {
+                        //cvWaitKey(0);
+                        cvDestroyAllWindows();
+                }
+#endif
+        //if (filename) break;
+    }
+}
+
+
 void run_detector(int argc, char **argv)
 {
 	int dont_show = find_arg(argc, argv, "-dont_show");
@@ -1146,6 +1396,12 @@ void run_detector(int argc, char **argv)
 	int final_width = find_int_arg(argc, argv, "-final_width", 13);
 	int final_heigh = find_int_arg(argc, argv, "-final_heigh", 13);
     int start = find_int_arg(argc, argv, "-start", 0);
+    char *secondWeight = find_char_arg(argc, argv, "-secondW", 0);
+    char *secondNet = find_char_arg(argc, argv, "-secondNet", 0);
+    char *jointNet = find_char_arg(argc, argv, "-jointNet", 0);
+    char *jointWeight = find_char_arg(argc, argv, "-jointW", 0);
+    int imWidth = find_int_arg(argc, argv, "-imWidth", -2);
+    int imHeight = find_int_arg(argc, argv, "-imHeight", -2);
     if(argc < 4){
         fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
@@ -1187,6 +1443,8 @@ void run_detector(int argc, char **argv)
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights);
     else if(0==strcmp(argv[2], "recall")) validate_detector_recall(datacfg, cfg, weights);
 	else if(0==strcmp(argv[2], "map")) validate_detector_map(datacfg, cfg, weights, thresh);
+    else if(0==strcmp(argv[2], "joint")) train_joint(datacfg, cfg, weights, secondWeight, jointNet, gpus, ngpus, clear, dont_show);
+    else if(0==strcmp(argv[2], "jointTest")) test_joint(datacfg, cfg, weights, filename, thresh, dont_show, secondWeight, jointNet, jointWeight, out_filename, imWidth, imHeight);
 	else if(0==strcmp(argv[2], "calc_anchors")) calc_anchors(datacfg, num_of_clusters, final_width, final_heigh, show);
     else if(0==strcmp(argv[2], "demo")) {
         list *options = read_data_cfg(datacfg);

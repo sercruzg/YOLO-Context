@@ -12,6 +12,7 @@ typedef struct layer layer;
 
 typedef enum {
     CONVOLUTIONAL,
+    CONCAT,
     DECONVOLUTIONAL,
     CONNECTED,
     MAXPOOL,
@@ -36,7 +37,8 @@ typedef enum {
     REORG,
 	REORG_OLD,
     BLANK,
-    UNMAXPOOL
+    UNMAXPOOL,
+    CONCAT_BOTTOM
 } LAYER_TYPE;
 
 typedef enum{
