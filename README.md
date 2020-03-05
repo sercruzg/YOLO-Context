@@ -62,7 +62,7 @@ Enter Image Path: 1egoDailyDatabase/images/subject1/bike/bike1/frame10032.jpg: P
 0 0 756 263 0.000186 1
 ```
 
-The first line being the image being tested on. The second line being the number of detections YOLO generated. Finally a series of lines, each line having a single detection with the format ``x1 y1 x2 y2 score label``.
+The first line being the image being tested on. The second line being the number of detections YOLO generated. Finally a series of lines, each line having a single detection with the format ``x1 y1 x2 y2 score label``, in this example the file would contain 845 lines with the format.
 
 ### Citing EgoDaily
 If you find this code useful in your research, please consider citing:
