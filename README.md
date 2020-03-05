@@ -40,6 +40,18 @@ To start training you can use the following command
 ./darknet detector train egoDailyDisamObj.data yoloContext-obj.cfg darknet19_448.conv.23 -gpus 0 -clear -dont_show
 ```
 
+The file "yoloContext-obj.cfg" contains the Neural Network layers. The file "darknet19_448.conv.23" contains the prelearned weights. The "-clear" parameter resets the training. The "-dont_show" parameter doesn't show a grpah with the Neural Network training performance, but instead prints it out on the command line. 
+
+During training the weights will be saved every 5,000 iterations under the backup folder.
+
+After training you can test the YOLO detector using the following command
+
+```
+./darknet detector test egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -imWidth 1920 -imHeight 1080 < egoDailyTest.txt
+```
+
+The parameter "-imWidth" and "-imHeight" define the image sizes for the final detection outputs.
+
 ### Citing EgoDaily
 If you find this code useful in your research, please consider citing:
 ```
