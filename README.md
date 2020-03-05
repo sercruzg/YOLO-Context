@@ -40,7 +40,7 @@ To start training you can use the following command
 ./darknet detector train egoDailyDisamObj.data yoloContext-obj.cfg darknet19_448.conv.23 -gpus 0 -clear -dont_show
 ```
 
-The file "yoloContext-obj.cfg" contains the Neural Network layers. The file "darknet19_448.conv.23" contains the prelearned weights. The "-clear" parameter resets the training. The "-dont_show" parameter doesn't show a grpah with the Neural Network training performance, but instead prints it out on the command line. 
+The file ``yoloContext-obj.cfg`` contains the Neural Network layers. The file ``darknet19_448.conv.23`` contains the prelearned weights. The ``-clear`` parameter resets the training. The ``-dont_show`` parameter doesn't show a grpah with the Neural Network training performance, but instead prints it out on the command line. 
 
 During training the weights will be saved every 5,000 iterations under the backup folder.
 
@@ -50,8 +50,8 @@ After training you can test the YOLO detector using the following command
 ./darknet detector test egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -imWidth 1920 -imHeight 1080 < egoDailyTest.txt > yoloEgoDailyDisam.txt
 ```
 
-The parameter "-imWidth" and "-imHeight" define the image sizes for the final detection outputs. The file "egoDailyTest.txt" contains the list of images for testing, with each line being
-The file "yoloEgoDailyDisam.txt" will contain the final detections, with the 3 first lines being some Network outputs (not important) and then a series of lines for each image as follows:
+The parameter ``-imWidth`` and ``-imHeight`` define the image sizes for the final detection outputs. The file ``egoDailyTest.txt`` contains the list of images for testing, with each line being
+The file ``yoloEgoDailyDisam.txt`` will contain the final detections, with the 3 first lines being some Network outputs (not important) and then a series of lines for each image as follows:
 
 ```
 Enter Image Path: 1egoDailyDatabase/images/subject1/bike/bike1/frame10032.jpg: Predicted in 0.319138 seconds.
@@ -62,7 +62,7 @@ Enter Image Path: 1egoDailyDatabase/images/subject1/bike/bike1/frame10032.jpg: P
 0 0 756 263 0.000186 1
 ```
 
-The first line being the image being tested on. The second line being the number of detections YOLO generated. Finally a series of lines, each line having a single detection with the format "x1 y1 x2 y2 score label".
+The first line being the image being tested on. The second line being the number of detections YOLO generated. Finally a series of lines, each line having a single detection with the format ``x1 y1 x2 y2 score label``.
 
 ### Citing EgoDaily
 If you find this code useful in your research, please consider citing:
