@@ -3,7 +3,7 @@ This is part of the code used on the [EgoDaily](https://github.com/sercruzg/EgoD
 
 This code masks the ground truth out after the convolutions on what we call the "Feature extraction" section, putting all the information inside the bounding box to 0. This forces the Neural Network to use the surrounding objects for detection.
 
-To use the masking in a layer you can set Mask=1 like this:
+To use the masking in a layer you can set ``mask=1`` like this:
 
 ```
 [convolutional]
@@ -15,7 +15,7 @@ pad=1
 activation=leaky
 mask=1
 ```
-The annotations are the same as YOLO, to train you need a file "egoDailyDisamTrain.txt" with each line pointing to the images 
+The annotations are the same as YOLO, to train you need a file ``egoDailyDisamTrain.txt`` with each line pointing to the images 
 
 ```
 <Path-to-images>/frame-0001.jpg
@@ -24,7 +24,7 @@ The annotations are the same as YOLO, to train you need a file "egoDailyDisamTra
 ...
 ```
 
-And you need the annotations to be in the same path, however, if the path has the word "images" in any portion of it, it will be replaced to "labels", so the program will look for the annotations like 
+And you need the annotations to be in the same path, however, if the path has the word ``images`` in any portion of it, it will be replaced to ``labels``, so the program will look for the annotations like 
 
 ```
 <Path-to-labels>/frame-0001.txt
