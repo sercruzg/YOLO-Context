@@ -47,10 +47,20 @@ During training the weights will be saved every 5,000 iterations under the backu
 After training you can test the YOLO detector using the following command
 
 ```
-./darknet detector test egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -imWidth 1920 -imHeight 1080 < egoDailyTest.txt
+./darknet detector test egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -imWidth 1920 -imHeight 1080 < egoDailyTest.txt > yoloEgoDailyDisam.txt
 ```
 
-The parameter "-imWidth" and "-imHeight" define the image sizes for the final detection outputs.
+The parameter "-imWidth" and "-imHeight" define the image sizes for the final detection outputs. The file "egoDailyTest.txt" contains the list of images for testing, with each line being
+The file "yoloEgoDailyDisam.txt" will contain the final detections, with the 3 first lines being some Network outputs (not important) and then a series of lines for each image as follows:
+
+```
+Enter Image Path: 1egoDailyDatabase/images/subject1/bike/bike1/frame10032.jpg: Predicted in 0.319138 seconds.
+845
+20 0 129 76 0.000320 0
+0 0 210 168 0.000195 0
+0 0 601 531 0.000160 1
+0 0 756 263 0.000186 1
+```
 
 ### Citing EgoDaily
 If you find this code useful in your research, please consider citing:
