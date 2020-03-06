@@ -35,7 +35,7 @@ And you need the annotations to be in the same path, however, if the path has th
 
 We include a simple matlab program to annotate the images based on the EgoDaily dataset.
 
-# Training
+### Training
 
 To start training you can use the following command
 
@@ -66,7 +66,7 @@ layer=-2
 
 Where ``height``, ``width`` and ``channels`` are the streams output grid sizes. ``stopbackward`` means the back propagation stops here. ``layer=-2`` represents which layer is gonna be taken to concatenate from both YOLO streams architecture, being the final layer number ``net.num_layers + layer``. If the network has 30 layers in total the layer taken from the concat layer would be ``30-2 = 28``.
 
-# Testing
+### Testing
 
 After training you can test the YOLO detector using the following command
 
