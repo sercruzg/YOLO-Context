@@ -34,6 +34,9 @@ And you need the annotations to be in the same path, however, if the path has th
 ```
 
 We include a simple matlab program to annotate the images based on the EgoDaily dataset.
+
+# Training
+
 To start training you can use the following command
 
 ```
@@ -43,6 +46,27 @@ To start training you can use the following command
 The file ``yoloEgoDailyDisamMask-obj.cfg`` contains the Neural Network layers. The file ``darknet19_448.conv.23`` contains the prelearned weights. The ``-clear`` parameter resets the training. The ``-dont_show`` parameter doesn't show a grpah with the Neural Network training performance, but instead prints it out on the command line. 
 
 During training the weights will be saved every 5,000 iterations under the backup folder.
+
+Having trained two YOLO networks you can train their joint architecture by using the following command:
+
+```
+./darknet detector joint egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -secondW ./backup/yoloEgoDailyDisamMask-obj_final.weights -jointNet yoloEgoHandsJointLateDisam-obj.cfg -gpus 0 -clear -dont_show 
+```
+
+The parameter ``-secondW`` represents the second stream in the joint architecture, as both streams have the save architecture we only need to give one file for it. The parameter ``-jointNet`` represents the joint architecture, where the concatenation occurs and the final layers for the detection. In this file we find the definition of a new layer called ``concat`` that takes both streams and concatenates them, as follows:
+
+```
+[concat]
+height=13
+width=13
+channels=1024
+stopbackward=1
+layer=-2
+```
+
+Where ``height``, ``width`` and ``channels`` are the streams output grid sizes. ``stopbackward`` means the back propagation stops here. ``layer=-2`` represents which layer is gonna be taken to concatenate from both YOLO streams architecture, being the final layer number ``net.num_layers + layer``. If the network has 30 layers in total the layer taken from the concat layer would be ``30-2 = 28``.
+
+# Testing
 
 After training you can test the YOLO detector using the following command
 
@@ -64,24 +88,6 @@ Enter Image Path: 1egoDailyDatabase/images/subject1/bike/bike1/frame10032.jpg: P
 
 The first line being the image being tested on. The second line being the number of detections YOLO generated. Finally a series of lines, each line having a single detection with the format ``x1 y1 x2 y2 score label``, in this example the file would contain 845 lines with the format.
 
-Having trained two YOLO networks you can train their joint architecture by using the following command:
-
-```
-./darknet detector joint egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -secondW ./backup/yoloEgoDailyDisamMask-obj_final.weights -jointNet yoloEgoHandsJointLateDisam-obj.cfg -gpus 0 -clear -dont_show 
-```
-
-The parameter ``-secondW`` represents the second stream in the joint architecture, as both streams have the save architecture we only need to give one file for it. The parameter ``-jointNet`` represents the joint architecture, where the concatenation occurs and the final layers for the detection. In this file we find the definition of a new layer called ``concat`` that takes both streams and concatenates them, as follows:
-
-```
-[concat]
-height=13
-width=13
-channels=1024
-stopbackward=1
-layer=-2
-```
-
-Where ``height``, ``width`` and ``channels`` are the streams output grid sizes. ``stopbackward`` means the back propagation stops here. ``layer=-2`` represents which layer is gonna be taken to concatenate from both YOLO streams architecture, being the final layer number ``net.num_layers + layer``. If the network has 30 layers in total the layer taken from the concat layer would be ``30-2 = 28``.
 
 Finally, for testing the joint architecture you can use the following command:
 
