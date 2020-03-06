@@ -83,6 +83,12 @@ layer=-2
 
 Where ``height``, ``width`` and ``channels`` are the streams output grid sizes. ``stopbackward`` means the back propagation stops here. ``layer=-2`` represents which layer is gonna be taken to concatenate from both YOLO streams architecture, being the final layer number ``net.num_layers + layer``. If the network has 30 layers in total the layer taken from the concat layer would be ``30-2 = 28``.
 
+Finally, for testing the joint architecture you can use the following command:
+
+```
+./darknet detector jointTest egoDailyDisamObj.data yoloEgoDailyDisam-obj.cfg ./backup/yoloEgoDailyDisam-obj_final.weights -secondW ./backup/yoloEgoDailyDisamMask-obj_final.weights -secondNet yoloEgoDailyDisamMask-obj.cfg -gpus 0 -dont_show -clear -jointNet yoloEgoDailyJointLateDisam-obj.cfg -jointW ./backup/yoloEgoDailyJointLateDisam-obj_final.weights -fileName egoDailyTest.txt -imWidth 1280 -imHeight 720 > yoloEgoDailyJointLateDisam.txt
+```
+
 ### Citing EgoDaily
 If you find this code useful in your research, please consider citing:
 ```
